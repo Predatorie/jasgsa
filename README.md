@@ -1,6 +1,6 @@
-# jagsa
+# jasgsa
 
-Just another game streaming app
+Just another steam game streaming app
 
 ## Getting Started
 
