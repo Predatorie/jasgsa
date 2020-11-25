@@ -1,37 +1,37 @@
-import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
 
-class SteamGamesModel {
-  SteamResponse response;
+class SteamGames {
+  Library library;
 
-  SteamGamesModel({this.response});
+  SteamGames({this.library});
 
-  SteamGamesModel.fromJson(Map<String, dynamic> json) {
-    response = json['response'] != null
-        ? new SteamResponse.fromJson(json['response'])
+  SteamGames.fromJson(Map<String, dynamic> json) {
+    library = json['response'] != null
+        ? new Library.fromJson(json['response'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.response != null) {
-      data['response'] = this.response.toJson();
+    if (this.library != null) {
+      data['response'] = this.library.toJson();
     }
     return data;
   }
 }
 
-class SteamResponse {
+class Library {
   int gameCount;
-  List<Game> games;
+  List<Games> games;
 
-  SteamResponse({this.gameCount, this.games});
+  Library({this.gameCount, this.games});
 
-  SteamResponse.fromJson(Map<String, dynamic> json) {
+  Library.fromJson(Map<String, dynamic> json) {
     gameCount = json['game_count'];
     if (json['games'] != null) {
-      games = new List<Game>();
+      games = new List<Games>();
       json['games'].forEach((v) {
-        games.add(new Game.fromJson(v));
+        games.add(new Games.fromJson(v));
       });
     }
   }
@@ -46,7 +46,7 @@ class SteamResponse {
   }
 }
 
-class Game {
+class Games {
   int appid;
   String name;
   int playtimeForever;
@@ -54,7 +54,7 @@ class Game {
   String imgLogoUrl;
   bool hasCommunityVisibleStats;
 
-  Game(
+  Games(
       {@required this.appid,
       this.name,
       this.playtimeForever,
@@ -62,7 +62,7 @@ class Game {
       this.imgLogoUrl,
       this.hasCommunityVisibleStats});
 
-  Game.fromJson(Map<String, dynamic> json) {
+  Games.fromJson(Map<String, dynamic> json) {
     appid = json['appid'];
     name = json['name'];
     playtimeForever = json['playtime_forever'];
@@ -81,4 +81,28 @@ class Game {
     data['has_community_visible_stats'] = this.hasCommunityVisibleStats;
     return data;
   }
+}
+
+class Game {
+  Game({@required id, @required name, playtimeForever, imgIconUrl, imgLogoUrl})
+      : _appId = id,
+        _name = name,
+        _playtimeForever = playtimeForever,
+        _imgIconUrl = imgIconUrl,
+        _imgLogoUrl = imgLogoUrl;
+
+  int _appId;
+  int get id => _appId;
+
+  String _name;
+  String get name => _name;
+
+  String _playtimeForever;
+  String get playtimeForever => _playtimeForever;
+
+  String _imgIconUrl;
+  String get imgIconUrl => _imgIconUrl;
+
+  String _imgLogoUrl;
+  String get imgLogoUrl => _imgLogoUrl;
 }

@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:jagsa/src/repositories/itwitch_repo.dart';
+import 'package:http/http.dart' as http;
 
 class TwitchRepository implements ITwitchRepository {
-  TwitchRepository({this.dio});
-  final Dio dio;
+  TwitchRepository({this.client});
+  final http.Client client;
 }

@@ -1,19 +1,21 @@
-class SteamPlayersModel {
-  List<Player> players;
+import 'package:flutter/material.dart';
 
-  SteamPlayersModel({this.players});
+class Players {
+  List<Profile> players;
 
-  SteamPlayersModel.fromJson(Map<String, dynamic> json) {
+  Players({this.players});
+
+  Players.fromJson(Map<String, dynamic> json) {
     if (json['players'] != null) {
-      players = new List<Player>();
+      players = new List<Profile>();
       json['players'].forEach((v) {
-        players.add(new Player.fromJson(v));
+        players.add(new Profile.fromJson(v));
       });
     }
   }
 }
 
-class Player {
+class Profile {
   String steamid;
   int communityvisibilitystate;
   int profilestate;
@@ -31,7 +33,7 @@ class Player {
   String locstatecode;
   int loccityid;
 
-  Player(
+  Profile(
       {this.steamid,
       this.communityvisibilitystate,
       this.profilestate,
@@ -49,7 +51,7 @@ class Player {
       this.locstatecode,
       this.loccityid});
 
-  Player.fromJson(Map<String, dynamic> json) {
+  Profile.fromJson(Map<String, dynamic> json) {
     steamid = json['steamid'];
     communityvisibilitystate = json['communityvisibilitystate'];
     profilestate = json['profilestate'];
@@ -67,4 +69,42 @@ class Player {
     locstatecode = json['locstatecode'];
     loccityid = json['loccityid'];
   }
+}
+
+class ProfileDisplay {
+  String communityvisibilitystate;
+  String profilestate;
+  String personaname;
+  String lastlogoff;
+  String profileurl;
+  String avatar;
+  String avatarmedium;
+  String avatarfull;
+  Text personastate;
+  String timecreated;
+  String personastateflags;
+  String loccountrycode;
+  String locstatecode;
+  int lastLogOffTimeStamp;
+
+  ProfileDisplay(
+      {@required id,
+      this.communityvisibilitystate,
+      this.profilestate,
+      this.personaname,
+      this.lastlogoff,
+      this.profileurl,
+      this.avatar,
+      this.avatarfull,
+      this.avatarmedium,
+      this.loccountrycode,
+      this.locstatecode,
+      this.personastate,
+      this.personastateflags,
+      this.timecreated,
+      this.lastLogOffTimeStamp})
+      : _steamid = id;
+
+  String _steamid;
+  String get id => _steamid;
 }

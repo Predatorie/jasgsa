@@ -5,6 +5,6 @@ class LoginViewBinding extends Bindings {
   @override
   void dependencies() {
     /// controller
-    Get.lazyPut(() => LoginViewController(steamRepository: Get.find()));
+    Get.put(LoginViewController(steamRepository: Get.find()));
   }
 }

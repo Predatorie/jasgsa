@@ -1,57 +1,134 @@
-import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:jagsa/secrets/secrets.dart';
+import 'package:jagsa/src/exceptions/network_exception.dart';
 import 'package:jagsa/src/models/steam_games_model.dart';
 import 'package:jagsa/src/models/steam_player_model.dart';
 import 'package:jagsa/src/repositories/isteam_repo.dart';
+import 'package:jagsa/src/services/formatting_service.dart';
 
 class SteamRepository implements ISteamRepository {
-  SteamRepository({this.dio});
-  final Dio dio;
+  final http.Client client;
+  final FormattingService formatterService;
+
+  SteamRepository({@required this.formatterService, @required this.client});
 
   @override
-  Future<List<Game>> getGames(String steamId) async {
-    try {
-      var url =
-          Uri.encodeFull("${Urls.ownedGamesUri}$steamId${Urls.steamEndUrl}");
+  Future<List<ProfileDisplay>> getFriendsProfileAsync(String steamId) async {
+    // get a list of friends
+    var url = "${Urls.friendsBaseUrl}$steamId${Urls.steamEndUrl}";
 
-      final response = await dio.get(url);
-      return SteamGamesModel.fromJson(response.data as Map<String, dynamic>)
-          .response
-          .games;
-    } on Exception catch (e) {
-      print(e.toString());
-      return Future.error(e.toString());
+    var result = await client
+        .get(Uri.encodeFull(url))
+        .then((result) => result.body)
+        .then(json.decode)
+        .then((f) => Players.fromJson(f))
+        .catchError((err) => throw NetworkException(err.toString()));
+
+    if (result.players == null || result.players.length == 0) {
+      throw (NetworkException('No friends returned.'));
     }
+
+    var players = result.players;
+    var friends = List<ProfileDisplay>();
+
+    // iterate over friends to get their profile
+    for (var player in players) {
+      var profile = await getUserProfileAsync(player.steamid);
+      if (profile != null) {
+        friends.add(profile);
+      }
+    }
+
+    friends
+        .sort((a, b) => b.lastLogOffTimeStamp.compareTo(a.lastLogOffTimeStamp));
+
+    return friends;
   }
 
   @override
-  Future<Player> getPlayer(String steamId) async {
-    try {
-      var url =
-          Uri.encodeFull("${Urls.baseUrlProfile}$steamId${Urls.steamEndUrl}");
+  Future<List<Game>> getGamesLibraryAsync(String steamId) async {
+    var url = "${Urls.ownedGamesUri}$steamId${Urls.steamEndUrl}";
 
-      final response = await dio.get(url);
-      return SteamPlayersModel.fromJson(response.data as Map<String, dynamic>)
-          .players
-          .first;
-    } on Exception catch (e) {
-      print(e.toString());
-      return Future.error(e.toString());
+    List<Game> list = [];
+
+    var result = await client
+        .get(Uri.encodeFull(url))
+        .then((result) => result.body)
+        .then(json.decode)
+        .then((json) => json["response"])
+        .then((games) => SteamGames.fromJson(games))
+        .catchError((err) => throw (NetworkException(err.toString())));
+
+    var library = result.library;
+    if (library == null || library.games?.length == 0) {
+      // Likely the user does not have a public profile or we lost connection
+      throw (NetworkException(
+          'Unable to retrieve games library. Profile might not be public'));
     }
+
+    // Sort games my most time played
+    library.games
+        .sort((a, b) => b.playtimeForever.compareTo(a.playtimeForever));
+
+    for (var game in library.games) {
+      // videos, sdks might not have an image so filter those
+      if (game.imgLogoUrl == null ||
+          game.imgLogoUrl.isEmpty ||
+          game.imgIconUrl == null ||
+          game.imgIconUrl.isEmpty) {
+        continue;
+      }
+
+      var thisGame = Game(
+          id: game.appid,
+          name: game.name,
+          imgIconUrl: formatterService.buildImageLogo(
+              game.appid.toString(), game.imgIconUrl),
+          imgLogoUrl: formatterService.buildImageLogo(
+              game.appid.toString(), game.imgLogoUrl),
+          playtimeForever:
+              formatterService.totalPlayTimeToString(game.playtimeForever));
+
+      list.add(thisGame);
+    }
+
+    return list;
   }
 
   @override
-  Future<List<Player>> getPlayers(String steamId) async {
-    try {
-      var url =
-          Uri.encodeFull("${Urls.friendsBaseUrl}$steamId${Urls.steamEndUrl}");
+  Future<ProfileDisplay> getUserProfileAsync(String steamId) async {
+    var url = "${Urls.baseUrlProfile}$steamId${Urls.steamEndUrl}";
 
-      final response = await dio.get(url);
-      return SteamPlayersModel.fromJson(response.data as Map<String, dynamic>)
-          .players;
-    } on Exception catch (e) {
-      print(e.toString());
-      return Future.error(e.toString());
+    var result = await client
+        .get(Uri.encodeFull(url))
+        .then((result) => result.body)
+        .then(json.decode)
+        .then((json) => json["response"])
+        .then((profile) => Players.fromJson(profile))
+        .catchError((err) => throw (NetworkException(err.toString())));
+
+    if (result.players?.length == 0) {
+      throw (NetworkException('Connection failed. Please try again.'));
     }
+
+    var display = ProfileDisplay(id: result.players[0].steamid)
+      ..avatar = result.players[0].avatar
+      ..avatarmedium = result.players[0].avatarmedium
+      ..avatarfull = result.players[0].avatarfull
+      ..communityvisibilitystate =
+          result.players[0].communityvisibilitystate.toString()
+      ..lastlogoff =
+          formatterService.lastLogToString(result.players[0].lastlogoff)
+      ..lastLogOffTimeStamp = result.players[0].lastlogoff
+      ..loccountrycode = result.players[0].loccountrycode
+      ..locstatecode = result.players[0].locstatecode
+      ..personaname = result.players[0].personaname
+      ..personastate =
+          formatterService.personaStateToText(result.players[0].personastate)
+      ..personastateflags = result.players[0].personastateflags.toString();
+
+    return display;
   }
 }
