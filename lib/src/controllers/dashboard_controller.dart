@@ -11,5 +11,8 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    /// get friends list
+    /// get games list
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jagsa/src/bindings/dashboard_binding.dart';
+import 'package:jagsa/src/bindings/login_binding.dart';
 import 'package:jagsa/src/repositories/isteam_repo.dart';
 import 'package:jagsa/src/repositories/itwitch_repo.dart';
 import 'package:jagsa/src/repositories/twitch_repo.dart';
@@ -18,27 +20,35 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Steam Games Live Streamers',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       getPages: [
-        GetPage(name: '/login', page: () => LoginView()),
-        GetPage(name: '/dashboard', page: () => DashboardView()),
+        GetPage(
+            name: '/login',
+            page: () => LoginView(),
+            binding: LoginViewBinding()),
+        GetPage(
+            name: '/dashboard',
+            page: () => DashboardView(),
+            binding: DashboardBinding()),
       ],
-      initialRoute: 'login',
+      initialRoute: '/login',
     );
   }
 }
 
 void _registerTypes() {
-  Get.lazyPut(() => http.Client(), fenix: true);
-  Get.lazyPut(() => FormattingService(), fenix: true);
+  Get.put(http.Client());
+  Get.put(FormattingService());
 
   /// services
-  Get.lazyPut<ISteamRepository>(
-      () => SteamRepository(client: Get.find(), formatterService: Get.find()),
-      fenix: true);
-  Get.lazyPut<ITwitchRepository>(() => TwitchRepository(client: Get.find()),
-      fenix: true);
+  Get.put<ISteamRepository>(
+    SteamRepository(client: Get.find(), formatterService: Get.find()),
+  );
+  Get.put<ITwitchRepository>(
+    TwitchRepository(client: Get.find()),
+  );
 }
